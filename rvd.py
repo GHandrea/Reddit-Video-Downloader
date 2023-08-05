@@ -7,6 +7,7 @@ from rich.console import Console
 from rich.text import Text
 import requests, time, os
 from moviepy.editor import VideoFileClip, AudioFileClip, CompositeAudioClip
+import json
 
 console=Console()
 s=requests.Session()
@@ -26,8 +27,14 @@ def download_page(link, filename, status) -> requests.Response:
 
 def find_content_id(page) -> str:
     """Searches for video id in the given webpage"""
-    content_id=page.text[page.text.find('<meta property="og:video" content="https://v.redd.it/')+len('<meta property="og:video" content="https://v.redd.it/'):]
-    content_id=content_id[:content_id.find("/HLSPlaylist.m3u8")]
+    data = page.text[page.text.find("<shreddit-screenview-data")+len("<shreddit-screenview-data"):]
+    data = data[data.find("data=\"")+6:]
+    data = data[:data.find(">")-1]
+    data=data.replace("&quot;","\"").replace("\n","").replace(" ","")
+    data=data[:-1]
+    page_url=json.loads(data)['post']['url']
+    content_id=page_url.split("/")[-1]
+    console.log("ID: ", content_id)
     return content_id
 
 def donwload_video_and_audio(content_id) -> None:
